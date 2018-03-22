@@ -5,8 +5,9 @@ import glob
 import tensorflow as tf
 
 # path to the images and the text file which holds the scores and ids
-base_images_path = r'D:\Yue\Documents\Datasets\AVA_dataset\images\images\\'
-ava_dataset_path = r'D:\Yue\Documents\Datasets\AVA_dataset\AVA.txt'
+base_images_path = r'/Users/valentinwolf/data/AVA_dataset/images/'
+ava_dataset_path = r'/Users/valentinwolf/data/AVA_dataset/AVA.txt'
+
 
 IMAGE_SIZE = 224
 

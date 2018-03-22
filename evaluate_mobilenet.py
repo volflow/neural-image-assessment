@@ -1,6 +1,7 @@
 import numpy as np
 import argparse
 from path import Path
+import os
 
 from keras.models import Model
 from keras.layers import Dense, Dropout
@@ -22,19 +23,26 @@ parser.add_argument('-resize', type=str, default='false',
                     help='Resize images to 224x224 before scoring')
 
 parser.add_argument('-rank', type=str, default='true',
-                    help='Whether to tank the images after they have been scored')
+                    help='Whether to rank the images after they have been scored')
+
+parser.add_argument('-rename', type=str, default='true',
+                    help='appends the rank in front of the filename')
 
 args = parser.parse_args()
 resize_image = args.resize.lower() in ("true", "yes", "t", "1")
 target_size = (224, 224) if resize_image else None
 rank_images = args.rank.lower() in ("true", "yes", "t", "1")
+rename_files = args.rename.lower() in ("true", "yes", "t", "1")
 
 # give priority to directory
 if args.dir is not None:
     print("Loading images from directory : ", args.dir)
-    imgs = Path(args.dir).files('*.png')
-    imgs += Path(args.dir).files('*.jpg')
-    imgs += Path(args.dir).files('*.jpeg')
+    imgs = Path(args.dir).files('[!.]*.png')
+    imgs += Path(args.dir).files('[!.]*.jpg')
+    imgs += Path(args.dir).files('[!.]*.jpeg')
+
+    for img_path in imgs:
+        print(img_path)
 
 elif args.img[0] is not None:
     print("Loading images from path(s) : ", args.img)
@@ -79,4 +87,7 @@ with tf.device('/CPU:0'):
         for i, (name, score) in enumerate(score_list):
             print("%d)" % (i + 1), "%s : Score = %0.5f" % (name, score))
 
-
+            if rename_files:
+                old_file = os.path.join(args.dir, name)
+                new_file = os.path.join(args.dir, "{}_{}".format(i+1,name))
+                os.rename(old_file, new_file)

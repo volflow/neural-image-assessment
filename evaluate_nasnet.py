@@ -1,6 +1,7 @@
 import numpy as np
 import argparse
 from path import Path
+import os
 
 from keras.models import Model
 from keras.layers import Dense, Dropout
@@ -19,10 +20,12 @@ parser.add_argument('-img', type=str, default=[None], nargs='+',
 
 parser.add_argument('-rank', type=str, default='true',
                     help='Whether to tank the images after they have been scored')
-
+parser.add_argument('-rename', type=str, default='true',
+                    help='appends the rank in front of the filename')
 args = parser.parse_args()
 target_size = (224, 224)  # NASNet requires strict size set to 224x224
 rank_images = args.rank.lower() in ("true", "yes", "t", "1")
+rename_files = args.rename.lower() in ("true", "yes", "t", "1")
 
 # give priority to directory
 if args.dir is not None:
@@ -74,4 +77,7 @@ with tf.device('/CPU:0'):
         for i, (name, score) in enumerate(score_list):
             print("%d)" % (i + 1), "%s : Score = %0.5f" % (name, score))
 
-
+            if rename_files:
+                old_file = os.path.join(args.dir, name)
+                new_file = os.path.join(args.dir, "{}_{}".format(score,name))
+                os.rename(old_file, new_file)
