@@ -1,17 +1,15 @@
 from flask import Flask
-import utils
+from utils.downloader import download_img,download_thumbnail
 import sys
-sys.path.append("./neural-image-assessment")
-import eval_mobilenet
+from evaluate import evaluate_mobilenet
 import os
 
 app = Flask(__name__)
-fn = "flask_test.jpg"
+fn = "temp/flask_test.jpg"
 
 @app.route('/url=<path:url>')
 def index(url):
-    utils.download_img(url,fn)
-    utils.download_thumbnail(url,fn+"thumbnail.jpg")
-    #print(os.listdir())
-    pred1 = eval_mobilenet.evaluate([fn,fn+"thumbnail.jpg"])
-    return str(pred1)
+    download_img(url,fn)
+    download_thumbnail(url,fn+"thumbnail.jpg")
+    pred = evaluate_mobilenet([fn,fn+"thumbnail.jpg"])
+    return str(pred)

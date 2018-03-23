@@ -27,16 +27,9 @@ def std_score(scores):
     std = np.sqrt(np.sum(((si - mean) ** 2) * scores))
     return std
 
-def evaluate(imgs):
+def evaluate(model,imgs):
     target_size = (224, 224)
     with tf.device('/CPU:0'):
-        base_model = MobileNet((None, None, 3), alpha=1, include_top=False, pooling='avg', weights=None)
-        x = Dropout(0.75)(base_model.output)
-        x = Dense(10, activation='softmax')(x)
-
-        model = Model(base_model.input, x)
-        model.load_weights(weigths_path)
-
         score_list = []
 
         for img_path in imgs:
@@ -59,6 +52,42 @@ def evaluate(imgs):
             print()
 
     return score_list
+
+def evaluate_mobilenet(imgs):
+    with tf.device('/CPU:0'):
+        base_model = MobileNet((None, None, 3), alpha=1, include_top=False, pooling='avg', weights=None)
+        x = Dropout(0.75)(base_model.output)
+        x = Dense(10, activation='softmax')(x)
+
+        model = Model(base_model.input, x)
+        model.load_weights(weigths_path)
+
+        return evaluate(model,imgs)
+
+def evaluate_nasnet(imgs):
+    #needs 224x224 images
+    with tf.device('/CPU:0'):
+        base_model = NASNetMobile((224, 224, 3), include_top=False, pooling='avg', weights=None)
+        x = Dropout(0.75)(base_model.output)
+        x = Dense(10, activation='softmax')(x)
+
+        model = Model(base_model.input, x)
+        model.load_weights('weights/nasnet_weights.h5')
+
+        return evaluate(model,imgs)
+
+def evaluate_inceptionnet(imgs):
+    with tf.device('/CPU:0'):
+        base_model = InceptionResNetV2(input_shape=(None, None, 3), include_top=False, pooling='avg', weights=None)
+        x = Dropout(0.75)(base_model.output)
+        x = Dense(10, activation='softmax')(x)
+
+        model = Model(base_model.input, x)
+        model.load_weights('weights/inception_resnet_weights.h5')
+
+        return evaluate(model,imgs)
+
+
 
         # if rank_images:
         #     print("*" * 40, "Ranking Images", "*" * 40)
