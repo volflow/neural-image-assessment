@@ -18,15 +18,13 @@ import tensorflow as tf
 
 from utils.score_utils import mean_score, std_score
 
-weigths_path = "/Users/valentinwolf/Documents/programming/Python/NIMA/neural-image-assessment/weights/mobilenet_weights.h5"
+weigths_path = "./weights/mobilenet_weights.h5"
 
 def evaluate(model,imgs):
     target_size = (224, 224)
     with tf.device('/CPU:0'):
         score_list = []
-        i = 1
-        for img_path in imgs:
-
+        for i,img_path in enumerate(imgs):
             img = load_img(img_path, target_size=target_size)
             x = img_to_array(img)
             x = np.expand_dims(x, axis=0)
@@ -38,11 +36,10 @@ def evaluate(model,imgs):
             mean = mean_score(scores)
             std = std_score(scores)
 
-            file_name = Path(img_path).name.lower()
+            file_name = img_path.lower()
             score_list.append(scores)#(file_name, mean, std))
 
             print('\rEvaluating: {}/{}'.format(i,len(imgs)), end='')
-            i += 1
 
             #print("Evaluating : ", img_path)
             #print("NIMA Score : %0.3f +- (%0.3f)" % (mean, std))
