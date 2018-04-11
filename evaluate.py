@@ -1,5 +1,5 @@
 import numpy as np
-from path import Path
+import glob
 import os
 
 from keras.models import Model
@@ -113,9 +113,9 @@ if __name__ == '__main__':
     # give priority to directory
     if args.dir is not None:
         print("Loading images from directory : ", args.dir)
-        imgs = Path(args.dir).files('[!.]*.png')
-        imgs += Path(args.dir).files('[!.]*.jpg')
-        imgs += Path(args.dir).files('[!.]*.jpeg')
+        imgs = glob.glob(args.dir + '/[!.]*.png')
+        imgs += glob.glob(args.dir + '/[!.]*..jpg')
+        imgs += glob.glob(args.dir + '/[!.]*.*.jpeg')
 
         for img_path in imgs:
             print(img_path)
