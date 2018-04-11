@@ -8,45 +8,45 @@ import tensorflow as tf
 base_images_path = r'/Users/valentinwolf/data/AVA_dataset/images/'
 ava_dataset_path = r'/Users/valentinwolf/data/AVA_dataset/AVA.txt'
 
+def import_dataset(base_images_path,ava_dataset_path, IMAGE_SIZE=224): #, val_size=5000):
 
-IMAGE_SIZE = 224
+    files = glob.glob(base_images_path + "*.jpg")
+    files = sorted(files)
 
-files = glob.glob(base_images_path + "*.jpg")
-files = sorted(files)
+    train_image_paths = []
+    train_scores = []
 
-train_image_paths = []
-train_scores = []
+    with open(ava_dataset_path, mode='r') as f:
+        lines = f.readlines()
+        for i, line in enumerate(lines):
+            token = line.split()
+            id = int(token[1])
 
-print("Loading training set and val set")
-with open(ava_dataset_path, mode='r') as f:
-    lines = f.readlines()
-    for i, line in enumerate(lines):
-        token = line.split()
-        id = int(token[1])
+            values = np.array(token[2:12], dtype='float32')
+            values /= values.sum()
 
-        values = np.array(token[2:12], dtype='float32')
-        values /= values.sum()
+            file_path = base_images_path + str(id) + '.jpg'
+            if os.path.exists(file_path):
+                train_image_paths.append(file_path)
+                train_scores.append(values)
 
-        file_path = base_images_path + str(id) + '.jpg'
-        if os.path.exists(file_path):
-            train_image_paths.append(file_path)
-            train_scores.append(values)
+            count = 255000 // 100
+            if i % count == 0 and i != 0:
+                print('\rLoaded %d%% of the dataset' % (i / 255000. * 100), end='')
 
-        count = 255000 // 20
-        if i % count == 0 and i != 0:
-            print('Loaded %d percent of the dataset' % (i / 255000. * 100))
+    train_image_paths = np.array(train_image_paths)
+    train_scores = np.array(train_scores, dtype='float32')
 
-train_image_paths = np.array(train_image_paths)
-train_scores = np.array(train_scores, dtype='float32')
+    # val_image_paths = train_image_paths[-val_size:]
+    # val_scores = train_scores[-val_size:]
+    # train_image_paths = train_image_paths[:-val_size]
+    # train_scores = train_scores[:-val_size]
 
-val_image_paths = train_image_paths[-5000:]
-val_scores = train_scores[-5000:]
-train_image_paths = train_image_paths[:-5000]
-train_scores = train_scores[:-5000]
+    # print('Train set size : ', train_image_paths.shape, train_scores.shape)
+    # print('Val set size : ', val_image_paths.shape, val_scores.shape)
+    # print('Train and validation datasets ready !')
 
-print('Train set size : ', train_image_paths.shape, train_scores.shape)
-print('Val set size : ', val_image_paths.shape, val_scores.shape)
-print('Train and validation datasets ready !')
+    return train_image_paths, train_scores#, val_image_paths, val_scores
 
 def parse_data(filename, scores):
     '''

@@ -2,13 +2,14 @@ from path import Path
 from PIL import Image as pil_image
 import argparse
 import os
-from multiprocessing.dummy import Pool
+from multiprocessing import Pool
 from queue import Queue
 import time
 import progressbar
 
+
 def resize_from_obj(img,dest,target_size=(224, 224),
-    keep_aspect_ratio=True, resample=pil_image.LANCZOS):
+    keep_aspect_ratio=True, resample='BILINEAR'):
     """
     resizes PIL image object img with resample as resampling filer then saves
     to new_path
@@ -18,22 +19,39 @@ def resize_from_obj(img,dest,target_size=(224, 224),
     pil_image.LANCZOS (a high-quality downsampling filter)
     """
 
+    if resample == 'LANCZOS':
+        resample = pil_image.LANCZOS
+    elif resample == 'NEAREST':
+        resample = pil_image.NEAREST
+    elif resample == 'BILINEAR':
+        resample = pil_image.BILINEAR
+    elif resample =='BICUBIC':
+        resample = pil_image.BICUBIC
+    else:
+        print("Invalid resample Function; using NEAREST")
+        resample = pil_image.NEAREST
+
     if keep_aspect_ratio:
         img.thumbnail(target_size,resample)
     else:
         img = img.resize(target_size,resample)
 
-    img.save(dest)
+    # img.save(dest)
+
+    padding = pil_image.new('RGB',
+                 target_size)
+    padding.paste(img)
+    padding.save(dest)
 
     #global _i
     #_i += 1
 
     # file_name = Path(img_path).name.lower()
     # print(file_name)
-    return 1
+    return
 
 def resize_from_path(img_path,dest,target_size=(224, 224),
-    keep_aspect_ratio=True, resample=pil_image.LANCZOS):
+    keep_aspect_ratio=True, resample='BILINEAR'):
     """
     resizes image at img_path with resample as resampling filer then saves
     to new_path
@@ -53,8 +71,11 @@ def split_list(list,parts=1):
     p_len = len(list) / parts
     return [list[int(p_len*i):int(p_len*(i+1))] for i in range(parts)]
 
-def batch_resize(img_paths,dest_folder,target_size=(224, 224),
-    keep_aspect_ratio=True, resample=pil_image.LANCZOS, chunksize=16):
+def _helper_resize_from_path(args):
+    resize_from_path(*args)
+
+def batch_resize(img_paths,dest_folder=None,target_size=(224, 224),
+    keep_aspect_ratio=True, resample='BILINEAR', chunksize=16):
     """
     resizes all images given in list img_paths using multithreading. I advise using
     Pillow-SMID for further speedup.
@@ -73,31 +94,31 @@ def batch_resize(img_paths,dest_folder,target_size=(224, 224),
         os.makedirs(dest_folder)
 
     total_imgs = len(img_paths)
+    print("Resizing {} images... ".format(total_imgs), end='')
+    #global _i
+    #_i = 0
+    #bar =  progressbar.ProgressBar(max_value=total_imgs)
+    #bar.update(i)
 
-    global _i
-    _i = 0
-    bar =  progressbar.ProgressBar(max_value=total_imgs)
-    bar.update(i)
+    args = []
+    for img_path in img_paths:
+        args.append([img_path,dest_folder + Path(img_path).name.lower(),
+        target_size, keep_aspect_ratio, resample])
 
-    # wrapping all args s.t. only img_path has to be passed
-    func = lambda img_path: resize_from_path(
-        img_path,dest_folder + Path(img_path).name.lower(),
-        target_size=target_size, keep_aspect_ratio=keep_aspect_ratio,
-        resample=resample)
 
     pool = Pool()
-    pool.map_async(func, img_paths, chunksize)
+    pool.map(_helper_resize_from_path, args, chunksize)
     pool.close()
 
-    while not i >= total_imgs:
-        bar.update(_i)
-        time.sleep(1)
+    #while not i >= total_imgs:
+    #    bar.update(_i)
+    #    time.sleep(1)
 
     pool.join()
-
+    print("Done!")
 
 def resize_folder(img_folder,dest_folder, include_subfolders=True,
-    target_size=(224, 224), keep_aspect_ratio=True, resample=pil_image.LANCZOS,
+    target_size=(224, 224), keep_aspect_ratio=True, resample='BILINEAR',
     chunksize=None):
     """
     resizes all images folder img_folder using multithreading. I advise using
@@ -112,22 +133,20 @@ def resize_folder(img_folder,dest_folder, include_subfolders=True,
     chunksize: if None it will use a heuristc that seems to work well,
                 otherwise see multiprocessing Pool map_async,
     """
-
+    print("test")
     if include_subfolders:
-        img_paths = list(Path(args.dir).walkfiles('[!.]*.jpg'))
-        img_paths += list(Path(args.dir).walkfiles('[!.]*.jpeg'))
-        img_paths += list(Path(args.dir).walkfiles('[!.]*.png'))
+        img_paths = list(Path(img_folder).walkfiles('[!.]*.jpg'))
+        img_paths += list(Path(img_folder).walkfiles('[!.]*.jpeg'))
+        img_paths += list(Path(img_folder).walkfiles('[!.]*.png'))
     else:
-        img_paths = list(Path(args.dir).files('[!.]*.jpg'))
-        img_paths += list(Path(args.dir).files('[!.]*.jpeg'))
-        img_paths += list(Path(args.dir).files('[!.]*.png'))
+        img_paths = list(Path(img_folder).files('[!.]*.jpg'))
+        img_paths += list(Path(img_folder).files('[!.]*.jpeg'))
+        img_paths += list(Path(img_folder).files('[!.]*.png'))
 
     if chunksize == None:
         # Heuristic for choosing the chunksize, seems to work well,
         # but most likely not optimal
         chunksize = max((1,min([len(img_paths)//32,128])))
-
-    print("Resizing ", len(img_paths)," pictures:")
 
     batch_resize(img_paths,dest_folder, target_size=target_size,
         keep_aspect_ratio=keep_aspect_ratio, resample=resample,
@@ -148,7 +167,8 @@ if __name__ == "__main__":
     include_subfolders = args.subf.lower() in ("true", "yes", "t", "1")
     keep_aspect_ratio = args.aspect.lower() in ("true", "yes", "t", "1")
 
+    print(args.dest)
     if args.dir is not None:
         resize_folder(args.dir,args.dest, include_subfolders=include_subfolders,
         target_size=target_size, keep_aspect_ratio=keep_aspect_ratio,
-            resample=pil_image.LANCZOS, chunksize=None)
+            resample='LANCZOS', chunksize=None)

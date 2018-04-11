@@ -10,7 +10,7 @@ from keras import backend as K
 from utils.data_loader import train_generator, val_generator
 
 '''
-Below is a modification to the TensorBoard callback to perform 
+Below is a modification to the TensorBoard callback to perform
 batchwise writing to the tensorboard, instead of only at the end
 of the batch.
 '''
@@ -55,34 +55,35 @@ def earth_mover_loss(y_true, y_pred):
     samplewise_emd = K.sqrt(K.mean(K.square(K.abs(cdf_ytrue - cdf_ypred)), axis=-1))
     return K.mean(samplewise_emd)
 
-image_size = 224
+if __name__ == '__main__':
+    image_size = 224
 
-base_model = MobileNet((image_size, image_size, 3), alpha=1, include_top=False, pooling='avg')
-for layer in base_model.layers:
-    layer.trainable = False
+    base_model = MobileNet((image_size, image_size, 3), alpha=1, include_top=False, pooling='avg')
+    for layer in base_model.layers:
+        layer.trainable = False
 
-x = Dropout(0.75)(base_model.output)
-x = Dense(10, activation='softmax')(x)
+    x = Dropout(0.75)(base_model.output)
+    x = Dense(10, activation='softmax')(x)
 
-model = Model(base_model.input, x)
-model.summary()
-optimizer = Adam(lr=1e-3)
-model.compile(optimizer, loss=earth_mover_loss)
+    model = Model(base_model.input, x)
+    model.summary()
+    optimizer = Adam(lr=1e-3)
+    model.compile(optimizer, loss=earth_mover_loss)
 
-# load weights from trained model if it exists
-if os.path.exists('weights/mobilenet_weights.h5'):
-    model.load_weights('weights/mobilenet_weights.h5')
+    # load weights from trained model if it exists
+    if os.path.exists('weights/mobilenet_weights.h5'):
+        model.load_weights('weights/mobilenet_weights.h5')
 
-checkpoint = ModelCheckpoint('weights/mobilenet_weights.h5', monitor='val_loss', verbose=1, save_weights_only=True, save_best_only=True,
-                             mode='min')
-tensorboard = TensorBoardBatch()
-callbacks = [checkpoint, tensorboard]
+    checkpoint = ModelCheckpoint('weights/mobilenet_weights.h5', monitor='val_loss', verbose=1, save_weights_only=True, save_best_only=True,
+                                 mode='min')
+    tensorboard = TensorBoardBatch()
+    callbacks = [checkpoint, tensorboard]
 
-batchsize = 200
-epochs = 20
+    batchsize = 200
+    epochs = 20
 
-model.fit_generator(train_generator(batchsize=batchsize),
-                    steps_per_epoch=(250000. // batchsize),
-                    epochs=epochs, verbose=1, callbacks=callbacks,
-                    validation_data=val_generator(batchsize=batchsize),
-                    validation_steps=(5000. // batchsize))
+    model.fit_generator(train_generator(batchsize=batchsize),
+                        steps_per_epoch=(250000. // batchsize),
+                        epochs=epochs, verbose=1, callbacks=callbacks,
+                        validation_data=val_generator(batchsize=batchsize),
+                        validation_steps=(5000. // batchsize))

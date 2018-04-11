@@ -15,3 +15,9 @@ def std_score(scores):
     a = (si - mean.T) ** 2
     std = np.sqrt(np.sum((a) * scores,axis=-1))
     return std[0]
+
+def earth_mover_distance(y_true, y_pred):
+    cdf_ytrue = np.cumsum(y_true, axis=-1)
+    cdf_ypred = np.cumsum(y_pred, axis=-1)
+    samplewise_emd = np.sqrt(np.mean(np.square(np.abs(cdf_ytrue - cdf_ypred)), axis=-1))
+    return np.mean(samplewise_emd)

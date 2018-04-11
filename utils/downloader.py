@@ -19,6 +19,5 @@ def download_img(url, fn):
 
 def download_thumbnail(url,fn,target_size=(224,224)):
     img = Image.open(req.urlopen(url))
-    resize.resize_from_obj(img,fn,target_size=target_size, keep_aspect_ratio=False, resample=Image.LANCZOS)
+    resize.resize_from_obj(img,fn,target_size=target_size, keep_aspect_ratio=True, resample=Image.LANCZOS)
     return
-
