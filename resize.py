@@ -9,7 +9,7 @@ import progressbar
 
 
 def resize_from_obj(img,dest,target_size=(224, 224),
-    keep_aspect_ratio=True, resample='BILINEAR'):
+    keep_aspect_ratio=True, resample='BILINEAR',jpg_quality=95):
     """
     resizes PIL image object img with resample as resampling filer then saves
     to new_path
@@ -41,7 +41,7 @@ def resize_from_obj(img,dest,target_size=(224, 224),
     padding = pil_image.new('RGB',
                  target_size)
     padding.paste(img)
-    padding.save(dest)
+    padding.save(dest,'JPEG',quality=jpg_quality)
 
     #global _i
     #_i += 1
