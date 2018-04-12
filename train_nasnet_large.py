@@ -10,12 +10,12 @@ from utils.nasnet import NASNetLarge
 
 from utils.data_loader import train_generator, val_generator
 
-'''
-Below is a modification to the TensorBoard callback to perform 
-batchwise writing to the tensorboard, instead of only at the end
-of the batch.
-'''
 class TensorBoardBatch(TensorBoard):
+    '''
+    Modification to the TensorBoard callback to perform
+    batchwise writing to the tensorboard, instead of only at the end
+    of the batch.
+    '''
     def __init__(self, *args, **kwargs):
         super(TensorBoardBatch, self).__init__(*args, **kwargs)
 
