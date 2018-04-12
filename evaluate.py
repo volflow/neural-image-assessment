@@ -18,64 +18,83 @@ import tensorflow as tf
 
 from utils.score_utils import mean_score, std_score
 
-weigths_path = "./weights/mobilenet_weights.h5"
+weigths_path = "./weights/"
 
-def evaluate(model,imgs):
+def evaluate(model,imgs,batch_size=32):
     target_size = (224, 224)
     with tf.device('/CPU:0'):
+        total_imgs = len(imgs)
         score_list = []
-        for i,img_path in enumerate(imgs):
-            img = load_img(img_path, target_size=target_size)
-            x = img_to_array(img)
-            x = np.expand_dims(x, axis=0)
+        batches = int(np.ceil(total_imgs / batch_size))
+        for b in range(batches):
+            batch = imgs[b*batch_size:(b+1)*batch_size]
+            x = np.zeros((len(batch), 224, 224, 3))
+
+            for i,img_path in enumerate(batch):
+                img = load_img(img_path, target_size=target_size)
+                x[i] = img_to_array(img)
 
             x = preprocess_input2(x)
+            scores = model.predict(x, batch_size=len(batch), verbose=0)
+            score_list.append(scores)
+            print('\rEvaluating: {}/{}'.format(
+                b*batch_size+len(batch),total_imgs), end='')
 
-            scores = model.predict(x, batch_size=1, verbose=0)[0]
+        # for i,img_path in enumerate(imgs):
+        #     img = load_img(img_path, target_size=target_size)
+        #     x = img_to_array(img)
+        #     x = np.expand_dims(x, axis=0)
+        #
+        #     x = preprocess_input2(x)
+        #
+        #     scores = model.predict(x, batch_size=1, verbose=0)[0]
+        #
+        #     mean = mean_score(scores)
+        #     std = std_score(scores)
+        #
+        #     file_name = img_path.lower()
+        #     score_list.append(scores)#(file_name, mean, std))
+        #
+        #     print('\rEvaluating: {}/{} Score: {:.3f} +- ({:.3f})'.format(i+1,len(imgs),mean,std), end='')
+        #
+        #     #print("Evaluating : ", img_path)
+        #     #print("NIMA Score : %0.3f +- (%0.3f)" % (mean, std))
+        #     #print()
 
-            mean = mean_score(scores)
-            std = std_score(scores)
-
-            file_name = img_path.lower()
-            score_list.append(scores)#(file_name, mean, std))
-
-            print('\rEvaluating: {}/{}'.format(i,len(imgs)), end='')
-
-            #print("Evaluating : ", img_path)
-            #print("NIMA Score : %0.3f +- (%0.3f)" % (mean, std))
-            #print()
-
-    return score_list
+    return np.vstack(score_list)
 
 def mobilenet():
     with tf.device('/CPU:0'):
-        base_model = MobileNet((None, None, 3), alpha=1, include_top=False, pooling='avg', weights=None)
+        base_model = MobileNet((None, None, 3), alpha=1, include_top=False,
+                                            pooling='avg', weights=None)
         x = Dropout(0.75)(base_model.output)
         x = Dense(10, activation='softmax')(x)
 
         model = Model(base_model.input, x)
-        model.load_weights(weigths_path)
+        model.load_weights(weigths_path + 'mobilenet_weights.h5')
         return model
 
 def nasnet():
     #needs 224x224 images
     with tf.device('/CPU:0'):
-        base_model = NASNetMobile((224, 224, 3), include_top=False, pooling='avg', weights=None)
+        base_model = NASNetMobile((224, 224, 3), include_top=False,
+                                    pooling='avg', weights=None)
         x = Dropout(0.75)(base_model.output)
         x = Dense(10, activation='softmax')(x)
 
         model = Model(base_model.input, x)
-        model.load_weights('weights/nasnet_weights.h5')
+        model.load_weights(weigths_path + 'nasnet_weights.h5')
         return model
 
 def inceptionnet():
     with tf.device('/CPU:0'):
-        base_model = InceptionResNetV2(input_shape=(None, None, 3), include_top=False, pooling='avg', weights=None)
+        base_model = InceptionResNetV2(input_shape=(None, None, 3),
+                                include_top=False, pooling='avg', weights=None)
         x = Dropout(0.75)(base_model.output)
         x = Dense(10, activation='softmax')(x)
 
         model = Model(base_model.input, x)
-        model.load_weights('weights/inception_resnet_weights.h5')
+        model.load_weights(weigths_path + 'inception_resnet_weights.h5')
         return model
 
 
