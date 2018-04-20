@@ -56,7 +56,8 @@ def inference_from_urls(model,imgs,batch_size=32):
             x = np.zeros((len(batch), 224, 224, 3))
 
             download_start = time.time()
-            with Pool(batch_size) as p:
+            MAX_WORKERS = 12
+            with Pool(MAX_WORKERS) as p:
                 image_list = p.map(download_img,batch)
 
                 # TODO: vectorize the loop
@@ -66,6 +67,7 @@ def inference_from_urls(model,imgs,batch_size=32):
             download_time = (time.time() - download_start) / batch_size
             inference_start = time.time()
             scores = inference_batchwise(model,x)
+            del x
             inference_time = (time.time() - inference_start) / batch_size
             score_list.append(scores)
             print('\rEvaluating: {}/{} Download: {:.2f}s Inference {:.2f}s'.format(
@@ -100,7 +102,7 @@ if __name__ == "__main__":
             start_i = i*chunk_size + offset
             end_i = (i+1)*chunk_size + offset
             chunk = urls_list[start_i:end_i]
-            scores = inference_from_urls(model,chunk,batch_size=32)
+            scores = inference_from_urls(model,chunk,batch_size=64)
             mean_scores = mean_score(scores)
             csv_file.loc[start_i:end_i-1,'score'] = mean_scores
             print("\nSaving progress to {}".format(csv_file_path))
