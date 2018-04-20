@@ -56,7 +56,7 @@ def inference_from_urls(model,imgs,batch_size=32):
             x = np.zeros((len(batch), 224, 224, 3))
 
             download_start = time.time()
-            MAX_WORKERS = 12
+            MAX_WORKERS = 14
             with Pool(MAX_WORKERS) as p:
                 image_list = p.map(download_img,batch)
 
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         index_list = csv_file.index[csv_file['score']==0.]
         offset = index_list[0]
 
-        urls_list = csv_file['url'].tolist()[offset:]
+        urls_list = csv_file['url'].tolist()#[offset:]
         total_urls = len(urls_list)
         print("Found {} urls with score 0. Predicting ...".format(total_urls))
 
