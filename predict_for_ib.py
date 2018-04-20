@@ -78,8 +78,9 @@ if __name__ == "__main__":
     print('loading network')
     import evaluate
     model = evaluate.nasnet()
-
-    for csv_file_path in glob.glob(csv_path+'/*.csv'):
+    csv_file_paths = sorted(glob.glob(csv_path+'/*.csv'))
+    print(csv_file_paths)
+    for csv_file_path in csv_file_paths):
         print("Reading new file: " + csv_file_path)
 
         csv_file = pd.read_csv(csv_file_path,sep=';',header=None,names=['id','url','score'])
