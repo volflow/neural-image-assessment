@@ -1,4 +1,4 @@
-csv_path = '/Users/valentinwolf/data/ib-urls-test/'
+csv_path = '/home/ubuntu/data/ib-urls/' #'/Users/valentinwolf/data/ib-urls-test/'
 
 import numpy as np
 import pandas as pd
@@ -73,7 +73,12 @@ def inference_from_urls(model,imgs,batch_size=32):
 
     return np.vstack(score_list)
 
-if __name__ == 'main':
+if __name__ == "__main__":
+    # load network
+    print('loading network')
+    import evaluate
+    model = evaluate.nasnet()
+
     for csv_file_path in glob.glob(csv_path+'/*.csv'):
         print("Reading new file: " + csv_file_path)
 
