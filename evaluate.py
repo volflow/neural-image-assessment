@@ -2,6 +2,8 @@ import numpy as np
 import glob
 import os
 
+import urllib.request as req
+
 from keras.models import Model
 from keras.layers import Dense, Dropout
 from keras.applications.mobilenet import MobileNet
@@ -20,6 +22,11 @@ from utils.score_utils import mean_score, std_score
 
 weigths_path = "./weights/"
 
+def inference_batchwise(model,batch):
+    x = preprocess_input2(batch)
+    scores = model.predict(x, batch_size=len(batch), verbose=0)
+    return scores
+
 def evaluate(model,imgs,batch_size=32):
     target_size = (224, 224)
     with tf.device('/CPU:0'):
@@ -34,8 +41,8 @@ def evaluate(model,imgs,batch_size=32):
                 img = load_img(img_path, target_size=target_size)
                 x[i] = img_to_array(img)
 
-            x = preprocess_input2(x)
-            scores = model.predict(x, batch_size=len(batch), verbose=0)
+            scores = inference_batchwise(model,batch)
+            
             score_list.append(scores)
             print('\rEvaluating: {}/{}'.format(
                 b*batch_size+len(batch),total_imgs), end='')

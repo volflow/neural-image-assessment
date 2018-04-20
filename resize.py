@@ -1,5 +1,5 @@
 from path import Path
-from PIL import Image as pil_image
+from PIL import Image as Image
 import argparse
 import os
 from multiprocessing import Pool
@@ -13,23 +13,23 @@ def resize_from_obj(img,dest,target_size=(224, 224),
     """
     resizes PIL image object img with resample as resampling filer then saves
     to new_path
-    resample filters: pil_image.NEAREST (use nearest neighbour),
-    pil_image.BILINEAR (linear interpolation),
-    pil_image.BICUBIC (cubic spline interpolation), or
-    pil_image.LANCZOS (a high-quality downsampling filter)
+    resample filters: Image.NEAREST (use nearest neighbour),
+    Image.BILINEAR (linear interpolation),
+    Image.BICUBIC (cubic spline interpolation), or
+    Image.LANCZOS (a high-quality downsampling filter)
     """
 
     if resample == 'LANCZOS':
-        resample = pil_image.LANCZOS
+        resample = Image.LANCZOS
     elif resample == 'NEAREST':
-        resample = pil_image.NEAREST
+        resample = Image.NEAREST
     elif resample == 'BILINEAR':
-        resample = pil_image.BILINEAR
+        resample = Image.BILINEAR
     elif resample =='BICUBIC':
-        resample = pil_image.BICUBIC
+        resample = Image.BICUBIC
     else:
         print("Invalid resample Function; using NEAREST")
-        resample = pil_image.NEAREST
+        resample = Image.NEAREST
 
     if keep_aspect_ratio:
         img.thumbnail(target_size,resample)
@@ -38,7 +38,7 @@ def resize_from_obj(img,dest,target_size=(224, 224),
 
     # img.save(dest)
 
-    padding = pil_image.new('RGB',
+    padding = Image.new('RGB',
                  target_size)
     padding.paste(img)
     padding.save(dest,'JPEG',quality=jpg_quality)
@@ -55,12 +55,12 @@ def resize_from_path(img_path,dest,target_size=(224, 224),
     """
     resizes image at img_path with resample as resampling filer then saves
     to new_path
-    resample filters: pil_image.NEAREST (use nearest neighbour),
-    pil_image.BILINEAR (linear interpolation),
-    pil_image.BICUBIC (cubic spline interpolation), or
-    pil_image.LANCZOS (a high-quality downsampling filter)
+    resample filters: Image.NEAREST (use nearest neighbour),
+    Image.BILINEAR (linear interpolation),
+    Image.BICUBIC (cubic spline interpolation), or
+    Image.LANCZOS (a high-quality downsampling filter)
     """
-    img = pil_image.open(img_path)
+    img = Image.open(img_path)
     resize_from_obj(img,dest=dest,target_size=target_size,
         keep_aspect_ratio=keep_aspect_ratio, resample=resample)
     return
@@ -84,7 +84,7 @@ def batch_resize(img_paths,dest_folder=None,target_size=(224, 224),
     target_size: (int,int) size images will be resized to
     keep_aspect_ratio: if True will keep aspect ratio of each image and resized
                         s.t the long side fits target_size
-    resample=pil_image.LANCZOS : resample filter used
+    resample=Image.LANCZOS : resample filter used
     chunksize=16 : see multiprocessing Pool map_async
     """
     if dest_folder is None:
@@ -129,7 +129,7 @@ def resize_folder(img_folder,dest_folder, include_subfolders=True,
     target_size: (int,int) size images will be resized to
     keep_aspect_ratio: if True will keep aspect ratio of each image and resized
                         s.t the long side fits target_size
-    resample=pil_image.LANCZOS : resample filter used
+    resample=Image.LANCZOS : resample filter used
     chunksize: if None it will use a heuristc that seems to work well,
                 otherwise see multiprocessing Pool map_async,
     """
