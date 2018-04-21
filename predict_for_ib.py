@@ -32,10 +32,17 @@ def download_img(url,target_size=(224,224)):
     downloads image from url; resizes image to target_size; retruns image
     """
     try:
-        img = Image.open(req.urlopen(url))
-    except OSError as inst:
+        downloaded_img = req.urlopen(url)
+    except ValueError:
+        print('failed open {}, unkown url type'.format(url))
+        return -1
+
+    try:
+        img = Image.open(downloaded_img)
+    except OSError:
         print('failed to download {}'.format(url))
         return -1
+
     img = resize(img,target_size)
     return img
 
@@ -63,19 +70,21 @@ def inference_from_urls(model,imgs,batch_size=32):
             MAX_WORKERS = 14
             with Pool(MAX_WORKERS) as p:
                 image_list = p.map(download_img,batch)
-                
+
                 failed_imgs = []
                 # TODO: vectorize the loop
                 for i,img in enumerate(image_list):
                     if img != -1:
                         x[i] = image_list[i]
-                    else: 
+                    else:
                         failed_imgs.append(i)
 
             download_time = (time.time() - download_start) / batch_size
             inference_start = time.time()
             scores = inference_batchwise(model,x)
-            scores[failed_imgs].fill(-1) 
+            # incicate failed predictions by score of [-1,0,0,...] / mean -1
+            scores[failed_imgs] = 0 
+            scores[failed_imgs,0] = -1
             del x
             inference_time = (time.time() - inference_start) / batch_size
             score_list.append(scores)
@@ -99,7 +108,7 @@ if __name__ == "__main__":
 
         # find first row with score 0
         index_list = csv_file.index[csv_file['score']==0.]
-        if len(index_list) == 0: 
+        if len(index_list) == 0:
             print("everything already predicted")
             continue
         offset = index_list[0]
