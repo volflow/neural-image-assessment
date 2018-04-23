@@ -1,7 +1,7 @@
 csv_path = '/home/ubuntu/data/ib-urls/' #'/Users/valentinwolf/data/ib-urls-test/'
-CHUNK_SIZE = 256
+CHUNK_SIZE = 1024
 BATCH_SIZE = 64
-MAX_WORKERS = 14
+MAX_WORKERS = 12
 import numpy as np
 import pandas as pd
 import glob
@@ -15,7 +15,7 @@ from utils.nasnet import preprocess_input as preprocess_input2
 
 import tensorflow as tf
 import time
-from multiprocessing import Pool
+from multiprocessing.dummy import Pool
 
 def resize(img,target_size):
     """
@@ -47,6 +47,11 @@ def download_img(url,target_size=(224,224)):
     except ValueError:
         print('\nunkown url type, failed open {}'.format(url))
         return -1
+    except urllib.error.URLError:
+        print('\nURLError, maybe server down, trying again in 10s: {}'.format(url))
+        time.sleep(10)
+        return download_img(url,target_size=target_size)
+        
 
 def inference_batchwise(model,batch):
     x = preprocess_input2(batch)
@@ -88,7 +93,7 @@ def inference_from_urls(model,imgs,batch_size=32):
                     else:
                         failed_imgs.append(i)
 
-            download_time = (time.time() - download_start) / batch_size
+            download_time = (time.time() - download_start) / len(batch)
             inference_start = time.time()
             scores = inference_batchwise(model,x)
 
@@ -97,7 +102,7 @@ def inference_from_urls(model,imgs,batch_size=32):
             scores[failed_imgs,0] = -1
 
             del x
-            inference_time = (time.time() - inference_start) / batch_size
+            inference_time = (time.time() - inference_start) / len(batch)
             score_list.append(scores)
             total_predicted += len(batch)
             print('\rPredicting: {}/{} Download: {:.2f}s Inference {:.2f}s'.format(
